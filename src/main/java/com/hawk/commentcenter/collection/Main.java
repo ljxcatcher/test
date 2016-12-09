@@ -3,6 +3,8 @@ package com.hawk.commentcenter.collection;
 import java.util.*;
 
 /**
+ * 测试hashset、hashmap、hashtable存储元素特性
+ *
  * @author junxiong.lang
  * @date 2016/11/29 15:11
  */

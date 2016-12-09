@@ -4,14 +4,19 @@ import org.bson.types.ObjectId;
 import org.jongo.Jongo;
 import org.jongo.MongoCollection;
 import org.jongo.MongoCursor;
+import org.jongo.Oid;
+
+import java.io.IOException;
 
 /**
+ * jongo基础应用
+ *
  * @author junxiong.lang
  * @date 2016/12/7 14:20
  */
 public class Main {
-    private static Jongo jongo;
-    private static MongoCollection foos;
+    public static Jongo jongo;
+    public static MongoCollection foos;
 
     static {
         JongoFactory jongoFactory = new JongoFactory("127.0.0.1", "27017", "test", "", "");
@@ -29,18 +34,22 @@ public class Main {
     private static void testFindOne() {
         String name = "ljx";
         Foo foo = foos.findOne("{name:#}", name).as(Foo.class);
+        Foo foo2 = foos.findOne(Oid.withOid("584906d46d9a31cbb91e0513")).as(Foo.class); // 相当于使用new ObjectId()
 
         System.out.println(foo);
+        System.out.println(foo2);
     }
 
     /**
      * 查询foos集合中的所有元素
      */
-    private static void testFind() {
+    private static void testFind() throws IOException {
         MongoCursor<Foo> all = foos.find().as(Foo.class);
         while(all.hasNext()) {
             System.out.println(all.next());
         }
+
+        all.close();
     }
 
     /**
@@ -48,7 +57,7 @@ public class Main {
      * @throws CloneNotSupportedException
      */
     private static void testSave() throws CloneNotSupportedException {
-        Foo foo = new Foo(15, "ljx", "ChungKing");
+        Foo foo = new Foo(19, "ljx", "ChungKing");
         foos.save(foo);
         foos.save(foo.clone());
     }
@@ -88,7 +97,38 @@ public class Main {
         foos.remove(new ObjectId("5847b9ce6d9a31cbb91e050f"));  // 删除相应objectId的元素
     }
 
-    private static class Foo implements Cloneable{
+    /**
+     * 对结果集进行排序(1:升序, -1:降序)
+     */
+    private static void testSort() throws IOException {
+        String address = "ChungKing";
+
+        MongoCursor cursor = foos.find("{address:#}", address).sort("{name:-1}").as(Foo.class);
+        while(cursor.hasNext()) {
+            System.out.println(cursor.next());
+        }
+
+        cursor.close();
+    }
+
+    /**
+     * 分页查询，相当于mysql中的limit 5,2
+     */
+    private static void testPagination() throws IOException {
+        String address = "ChungKing";
+
+        MongoCursor cursor = foos.find("{address:#}", address).skip(5).limit(2).as(Foo.class);
+        while(cursor.hasNext()) {
+            System.out.println(cursor.next());
+        }
+
+        cursor.close();
+    }
+
+    /**
+     * 使用protected权限以保证继承类正常调用Foo类
+     */
+    protected static class Foo implements Cloneable{
         private Integer id;
         private String name;
         private String address;
@@ -142,12 +182,14 @@ public class Main {
     }
 
     public static void main(String[] args) throws CloneNotSupportedException {
-//        testFindOne();
+        testFindOne();
 //        testFind();
 //        testSave();
 //        testInsert();
 //        testUpdate();
-        testRemove();
+//        testRemove();
+//        testSort();
+//        testPagination();
     }
 
 }
